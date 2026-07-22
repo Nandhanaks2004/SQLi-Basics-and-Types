@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Injection — From Database Fundamentals to SQLi Techniques</title>
+<style>
+:root{
+    --primary:#00e6a0;
+    --primary-dim:rgba(0,230,160,.12);
+    --danger:#ff5d6c;
+    --danger-dim:rgba(255,93,108,.12);
+    --warning:#ffb020;
+    --warning-dim:rgba(255,176,32,.12);
+    --info:#4aa8ff;
+    --info-dim:rgba(74,168,255,.12);
+    --bg:#0a0d14;
+    --bg2:#0e131d;
+    --card:#121826;
+    --card2:#161d2c;
+    --border:#1f2937;
+    --text:#e6edf3;
+    --muted:#8b97a7;
+    --muted2:#5b6675;
+    --radius:12px;
+    --mono:'JetBrains Mono','Fira Code',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 500px at 85% -5%,rgba(0,230,160,.07),transparent 60%),radial-gradient(800px 500px at 5% 10%,rgba(74,168,255,.06),transparent 55%),linear-gradient(180deg,var(--bg),var(--bg2))}
+a{color:inherit}
+::selection{background:rgba(0,230,160,.3)}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:300px;flex:0 0 300px;background:rgba(14,19,29,.85);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;padding:22px 0;backdrop-filter:blur(8px)}
+.brand{display:flex;align-items:center;gap:11px;padding:0 22px 18px}
+.brand .logo{width:38px;height:38px;border-radius:10px;flex:0 0 38px;background:linear-gradient(135deg,var(--primary),#0aa);display:grid;place-items:center;font-weight:800;color:#04211a;font-size:15px;box-shadow:0 6px 20px rgba(0,230,160,.3)}
+.brand .b-title{font-size:14px;font-weight:700;letter-spacing:.3px;line-height:1.2}
+.brand .b-sub{font-size:10.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.nav-group-label{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);padding:16px 22px 8px;font-weight:600}
+.nav-link{display:flex;align-items:center;gap:10px;padding:8px 22px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .18s ease;text-decoration:none}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,.025)}
+.nav-link.active{color:var(--primary);border-left-color:var(--primary);background:var(--primary-dim);font-weight:600}
+.nav-link .badge{font-family:var(--mono);font-size:9.5px;font-weight:700;background:rgba(255,255,255,.06);color:var(--muted);padding:2px 6px;border-radius:6px;min-width:30px;text-align:center;flex:0 0 auto}
+.nav-link.active .badge{background:rgba(0,230,160,.15);color:var(--primary)}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(10,13,20,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 36px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.crumb{font-size:13px;color:var(--muted)}
+.crumb b{color:var(--text);font-weight:600}
+.progress-wrap{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+.progress-bar{width:140px;height:6px;border-radius:99px;background:var(--border);overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--primary),#0aa);transition:width .4s ease}
+.content{padding:44px 36px 90px;max-width:1080px;margin:0 auto;width:100%}
+
+section{margin:0 0 26px;scroll-margin-top:88px}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.sec-head .num{font-family:var(--mono);font-size:12px;font-weight:700;color:#04211a;background:linear-gradient(135deg,var(--primary),#0aa);width:42px;height:42px;border-radius:11px;display:grid;place-items:center;flex:0 0 42px;box-shadow:0 6px 18px rgba(0,230,160,.25)}
+.sec-head h2{font-size:24px;font-weight:800;letter-spacing:-.4px}
+.sec-head .sub{font-size:13px;color:var(--muted);font-weight:500}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:18px;transition:border-color .2s ease}
+.card:hover{border-color:#26324a}
+.card h3{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:9px}
+.card h4{font-size:14px;margin:16px 0 8px}
+.card p{font-size:14.5px;margin-bottom:10px}
+.card p:last-child{margin-bottom:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* hero */
+.hero{border:1px solid var(--border);border-radius:18px;padding:42px;background:linear-gradient(135deg,rgba(0,230,160,.06),rgba(74,168,255,.04));position:relative;overflow:hidden;margin-bottom:30px}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(0,230,160,.16),transparent 70%);border-radius:50%}
+.hero .tag{display:inline-block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--primary);border:1px solid var(--primary);border-radius:99px;padding:5px 14px;margin-bottom:18px;font-weight:600}
+.hero h1{font-size:38px;line-height:1.15;font-weight:800;letter-spacing:-.5px;margin-bottom:14px}
+.hero h1 .grad{background:linear-gradient(90deg,var(--primary),var(--info));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);font-size:15px;max-width:640px}
+.bridge{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0 4px}
+.bridge .bnode{font-family:var(--mono);font-size:12.5px;font-weight:700;padding:9px 15px;border-radius:9px;border:1px solid var(--border)}
+.bridge .owasp{background:var(--info-dim);color:var(--info);border-color:rgba(74,168,255,.4)}
+.bridge .inj{background:var(--danger-dim);color:var(--danger);border-color:rgba(255,93,108,.4)}
+.bridge .sqli{background:var(--primary-dim);color:var(--primary);border-color:rgba(0,230,160,.4)}
+.bridge .arr{color:var(--muted2);font-size:16px}
+
+/* flow / diagrams */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:16px 0}
+.fnode{flex:1 1 110px;min-width:100px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:13px 10px;font-size:12.5px;font-weight:600}
+.fnode .ic{font-size:18px;display:block;margin-bottom:5px}
+.fnode.info{border-color:rgba(74,168,255,.4)}
+.fnode.danger{border-color:rgba(255,93,108,.5)}
+.fnode.warn{border-color:rgba(255,176,32,.5)}
+.fnode.ok{border-color:rgba(0,230,160,.5)}
+.farrow{display:grid;place-items:center;color:var(--muted2);font-size:18px;padding:0 8px;align-self:center}
+@media(max-width:680px){.farrow{transform:rotate(90deg);padding:4px 0}}
+.tree{font-family:var(--mono);font-size:13px;line-height:1.9;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:14px 0;white-space:pre}
+.tree .c1{color:var(--primary)}.tree .c2{color:var(--info)}.tree .c3{color:var(--warning)}
+
+/* callouts */
+.call{display:flex;gap:13px;padding:15px 17px;border-radius:10px;margin:14px 0;border:1px solid var(--border);border-left-width:3px}
+.call .ci{font-size:16px;flex:0 0 20px;line-height:1.6}
+.call .ct{font-size:13.5px}
+.call .ct b{display:block;margin-bottom:2px;font-size:13.5px}
+.call.info{background:var(--info-dim);border-color:rgba(74,168,255,.35);border-left-color:var(--info)}
+.call.info .ci,.call.info .ct b{color:var(--info)}
+.call.warn{background:var(--warning-dim);border-color:rgba(255,176,32,.35);border-left-color:var(--warning)}
+.call.warn .ci,.call.warn .ct b{color:var(--warning)}
+.call.danger{background:var(--danger-dim);border-color:rgba(255,93,108,.35);border-left-color:var(--danger)}
+.call.danger .ci,.call.danger .ct b{color:var(--danger)}
+.call.ok{background:var(--primary-dim);border-color:rgba(0,230,160,.35);border-left-color:var(--primary)}
+.call.ok .ci,.call.ok .ct b{color:var(--primary)}
+
+/* interactive boxes */
+.ask{border:1px solid rgba(74,168,255,.4);background:var(--info-dim);border-radius:10px;padding:14px 16px;margin:16px 0}
+.ask .lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--info);font-weight:700;margin-bottom:6px;display:flex;gap:7px;align-items:center}
+.ask .q{font-size:14.5px;font-weight:600;margin-bottom:12px}
+.predict{border:1px solid rgba(0,230,160,.4);background:var(--primary-dim);border-radius:10px;padding:14px 16px;margin:16px 0}
+.predict .lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:6px;display:flex;gap:7px;align-items:center}
+.trainer{border:1px dashed rgba(255,176,32,.45);background:rgba(255,176,32,.06);border-radius:10px;padding:14px 16px;margin:16px 0}
+.trainer .lbl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--warning);font-weight:700;margin-bottom:6px;display:flex;gap:7px;align-items:center}
+
+.btn{font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:none;border-radius:9px;padding:10px 18px;transition:all .18s ease;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#0aa);color:#04211a;box-shadow:0 6px 18px rgba(0,230,160,.25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,230,160,.35)}
+.btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--primary);padding:9px 16px}
+.btn-ghost:hover{background:var(--primary-dim)}
+.btn-ghost.warn{color:var(--warning);border-color:var(--warning)}
+.btn-ghost.warn:hover{background:var(--warning-dim)}
+.btn-ghost.info{color:var(--info);border-color:var(--info)}
+.btn-ghost.info:hover{background:var(--info-dim)}
+.reveal{display:none;margin-top:12px;padding:13px 15px;border-radius:9px;background:var(--card2);border:1px solid var(--border);font-size:13.5px;animation:fade .35s ease}
+.reveal.show{display:block}
+.reveal b{color:var(--primary)}
+
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .18s ease}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* table */
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tbl th{background:var(--card2);color:var(--primary);text-align:left;padding:11px 13px;font-weight:600;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 13px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12.5px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl .col-cell{cursor:pointer;transition:background .15s}
+.tbl .col-cell:hover{background:var(--primary-dim)}
+.tbl .row-cell{cursor:pointer;transition:background .15s}
+.tbl .row-cell:hover{background:var(--info-dim)}
+.tbl .val-cell{cursor:pointer;transition:background .15s}
+.tbl .val-cell:hover{background:var(--warning-dim)}
+.tbl .hl{background:var(--primary-dim)!important}
+
+/* sql explorer */
+.explorer{display:grid;grid-template-columns:1fr;gap:14px}
+.sqlbuilder{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:var(--mono);font-size:13px;min-height:54px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.kw{background:rgba(74,168,255,.15);color:var(--info);padding:3px 9px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .15s;font-weight:600}
+.kw:hover{border-color:var(--info)}
+.kw.active{background:var(--info);color:#04211a}
+.kw.sel{background:rgba(0,230,160,.15);color:var(--primary)}
+.kw.sel.active{background:var(--primary);color:#04211a}
+.sqlresult{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px;font-family:var(--mono);font-size:12.5px;min-height:48px;color:var(--muted)}
+.sqlresult .ok{color:var(--primary)}
+.sqlresult .row{color:var(--text)}
+.explain3{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.explain3 .e{flex:1 1 140px;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:12px}
+.explain3 .e .et{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--warning);font-weight:700;margin-bottom:5px}
+.explain3 .e p{font-size:12.5px;color:var(--muted);margin:0}
+
+/* step walk */
+.steps{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.step{display:flex;gap:14px;align-items:flex-start;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;opacity:.35;transition:all .3s ease}
+.step.active{opacity:1;border-color:rgba(0,230,160,.4);box-shadow:0 0 0 3px var(--primary-dim)}
+.step .snum{font-family:var(--mono);font-weight:700;color:var(--primary);font-size:14px;flex:0 0 26px}
+.step .stitle{font-weight:600;font-size:14px;margin-bottom:3px}
+.step .sbody{font-size:13px;color:var(--muted);font-family:var(--mono)}
+.step .sbody .k{color:var(--info)}
+
+/* request / response panel */
+.reqres{display:grid;grid-template-columns:1fr;gap:12px}
+.panel{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)}
+.panel .ph{display:flex;align-items:center;gap:8px;padding:9px 13px;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.panel .ph .d{width:9px;height:9px;border-radius:50%}
+.panel .ph .d.r{background:var(--danger)}.panel .ph .d.g{background:var(--primary)}.panel .ph .d.b{background:var(--info)}.panel .ph .d.y{background:var(--warning)}
+.panel .pb{padding:13px 15px;font-family:var(--mono);font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.k{color:var(--info)}.v{color:var(--text)}.c-danger{color:var(--danger)}.c-ok{color:var(--primary)}.c-warn{color:var(--warning)}.c-mut{color:var(--muted)}.c-info{color:var(--info)}
+
+.verdict{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:13.5px;display:none}
+.verdict.show{display:block;animation:fade .35s ease}
+.verdict .vh{font-weight:700;display:block;margin-bottom:10px;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.verdict .vrow{display:grid;grid-template-columns:200px 1fr;gap:10px;padding:5px 0;border-top:1px dashed var(--border)}
+.verdict .vrow:first-of-type{border-top:none}
+.verdict .vk{color:var(--muted);font-size:12.5px;font-weight:600}
+.verdict .vv{font-size:13px}
+.verdict.vuln{background:var(--danger-dim);border:1px solid rgba(255,93,108,.35)}
+.verdict.vuln .vh{color:var(--danger)}
+.verdict.secure{background:var(--primary-dim);border:1px solid rgba(0,230,160,.35)}
+.verdict.secure .vh{color:var(--primary)}
+.verdict.normal{background:var(--info-dim);border:1px solid rgba(74,168,255,.35)}
+.verdict.normal .vh{color:var(--info)}
+
+.statusline{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;padding:6px 12px;border-radius:99px;margin:4px 6px 4px 0}
+.statusline .sdot{width:8px;height:8px;border-radius:50%}
+.st-normal{background:var(--info-dim);color:var(--info)}.st-normal .sdot{background:var(--info)}
+.st-vuln{background:var(--danger-dim);color:var(--danger)}.st-vuln .sdot{background:var(--danger)}
+.st-secure{background:var(--primary-dim);color:var(--primary)}.st-secure .sdot{background:var(--primary)}
+
+/* sqlmap workflow */
+.wf{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.wf .wfnode{font-family:var(--mono);font-size:12px;padding:10px 13px;border-radius:9px;border:1px solid var(--border);background:var(--card2);text-align:center;flex:1 1 130px}
+.wf .wfnode.acc{background:var(--danger-dim);border-color:rgba(255,93,108,.4);color:var(--danger)}
+.wf .wfnode.tool{background:var(--primary-dim);border-color:rgba(0,230,160,.4);color:var(--primary)}
+.wf .wfarr{color:var(--muted2);font-size:15px}
+
+/* checklist */
+.checklist{list-style:none;margin:14px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checklist li{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.checklist li .ck{color:var(--primary);font-weight:700;flex:0 0 16px}
+@media(max-width:680px){.checklist{grid-template-columns:1fr}}
+
+.nextbtn{display:inline-flex;align-items:center;gap:9px;margin-top:18px;background:linear-gradient(135deg,var(--primary),#0aa);color:#04211a;border:none;border-radius:10px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 22px rgba(0,230,160,.25);transition:all .2s ease}
+.nextbtn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,230,160,.35)}
+.nextbtn.alt{background:var(--card2);color:var(--text);border:1px solid var(--border);box-shadow:none}
+.nextbtn.alt:hover{border-color:var(--primary);color:var(--primary)}
+
+footer{border-top:1px solid var(--border);margin-top:40px;padding-top:24px;color:var(--muted2);font-size:12.5px;text-align:center}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fade .5s ease}
+.sidebar::-webkit-scrollbar,.content::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#222c3d;border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#2c3a52}
+@media(max-width:900px){.sidebar{display:none}.content{padding:30px 18px 70px}.topbar{padding:12px 18px}.hero{padding:28px 22px}.hero h1{font-size:28px}.sec-head h2{font-size:21px}}
+.mobile-nav{display:none}
+@media(max-width:900px){.mobile-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.mobile-nav select{flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px;font-family:var(--sans);font-size:13px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+    <div class="brand">
+        <div class="logo">SQL</div>
+        <div><div class="b-title">SQL Injection</div><div class="b-sub">Lab 2025</div></div>
+    </div>
+    <div class="nav-group-label">Foundation</div>
+    <a class="nav-link" href="#intro" data-target="intro"><span class="badge">00</span>From Injection to SQLi</a>
+    <a class="nav-link" href="#why" data-target="why"><span class="badge">01</span>Why Databases?</a>
+    <a class="nav-link" href="#db" data-target="db"><span class="badge">02</span>Database Basics</a>
+    <a class="nav-link" href="#sql" data-target="sql"><span class="badge">03</span>What Is SQL?</a>
+    <a class="nav-link" href="#practice" data-target="practice"><span class="badge">04</span>SQL Query Practice</a>
+    <div class="nav-group-label">The Connection</div>
+    <a class="nav-link" href="#comm" data-target="comm"><span class="badge">05</span>App ↔ Database</a>
+    <a class="nav-link" href="#trust" data-target="trust"><span class="badge">06</span>Trust Boundary</a>
+    <a class="nav-link" href="#sqli" data-target="sqli"><span class="badge">07</span>What Is SQLi?</a>
+    <a class="nav-link" href="#why2" data-target="why2"><span class="badge">08</span>Why It Happens</a>
+    <div class="nav-group-label">Types of SQLi</div>
+    <a class="nav-link" href="#types" data-target="types"><span class="badge">09</span>Type Hierarchy</a>
+    <a class="nav-link" href="#inband" data-target="inband"><span class="badge">10</span>In-Band</a>
+    <a class="nav-link" href="#blind" data-target="blind"><span class="badge">11</span>Blind</a>
+    <a class="nav-link" href="#oob" data-target="oob"><span class="badge">12</span>Out-of-Band</a>
+    <div class="nav-group-label">Close</div>
+    <a class="nav-link" href="#impact" data-target="impact"><span class="badge">13</span>Impact</a>
+    <a class="nav-link" href="#sqlmap" data-target="sqlmap"><span class="badge">14</span>SQLMap Intro</a>
+    <a class="nav-link" href="#prevent" data-target="prevent"><span class="badge">15</span>Prevention</a>
+    <a class="nav-link" href="#portswigger" data-target="portswigger"><span class="badge">16</span>PortSwigger Labs</a>
+</aside>
+
+<div class="main">
+<div class="topbar">
+    <div class="crumb">Section: <b id="crumb">From Injection to SQLi</b></div>
+    <div class="progress-wrap"><span id="progressLabel">1 / 17</span><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
+</div>
+
+<div class="content">
+<div class="mobile-nav"><select id="mobileSelect" onchange="jumpTo(this.value)"></select></div>
+
+<!-- ===== 00 INTRO ===== -->
+<section id="intro" class="fade-in">
+    <div class="hero">
+        <span class="tag">Security Education Platform</span>
+        <h1>SQL Injection<br><span class="grad">From Database Fundamentals to SQLi Techniques</span></h1>
+        <p>An interactive classroom lab that builds SQL Injection from first principles — so students understand <b>why</b> it happens and <b>how the techniques differ</b>, not just which payloads to type.</p>
+        <div class="bridge">
+            <span class="bnode owasp">OWASP TOP 10</span><span class="bridge arr">↓</span>
+            <span class="bnode inj">A05:2025 — INJECTION</span><span class="bridge arr">↓</span>
+            <span class="bnode sqli">SQL INJECTION</span>
+        </div>
+    </div>
+    <div class="card">
+        <h3>🔗 Connecting to the previous lesson</h3>
+        <p>You already learned Injection from the OWASP Top 10:2025. You know the root idea — <b>untrusted input is allowed to influence the structure or meaning of an interpreter's command</b>.</p>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"But what exactly is being injected when we talk about <b>SQL</b> Injection?"</div>
+        </div>
+        <div class="predict">
+            <div class="lbl">🔮 Predict</div>
+            <p class="muted" style="margin:0">Before revealing the answer, let students guess: is it HTML? JavaScript? Or something the database understands?</p>
+            <button class="btn btn-ghost" onclick="revealBox(this,'It is <b>SQL code</b> — instructions the database understands. The user\'s input is placed where the database expects data, but instead carries commands.')">Reveal Answer</button>
+            <div class="reveal"></div>
+        </div>
+        <div class="call ok">
+            <div class="ci">➡</div>
+            <div class="ct"><b>To understand SQL Injection, we first need to understand what happens behind a normal web application.</b> That starts with databases.</div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('why')">Continue: Why Do We Need Databases? →</button>
+</section>
+
+<!-- ===== 01 WHY DATABASES ===== -->
+<section id="why" class="fade-in">
+    <div class="sec-head"><div class="num">01</div><div><h2>Why Do We Need a Database?</h2><div class="sub">Start from a real-world scenario</div></div></div>
+    <div class="card">
+        <h3>🛒 Imagine an online shopping website</h3>
+        <p>A user named Alice logs in. The site greets her by name and shows her past orders.</p>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"How does the website know Alice exists — and remember her from last time?"</div>
+        </div>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"Where are millions of user accounts, product names, prices, and orders stored?"</div>
+        </div>
+        <div class="call info">
+            <div class="ci">ℹ</div>
+            <div class="ct"><b>A database</b> lets an application <b>store, organize, retrieve, and update</b> information that must survive beyond a single page load. Without it, every refresh would forget everything.</div>
+        </div>
+        <div class="flow">
+            <div class="fnode info"><span class="ic">📸</span>Instagram<br>Users · Posts · Comments</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">🛍️</span>Store<br>Products · Customers · Orders</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">🏦</span>Banking<br>Customers · Accounts · Transactions</div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('db')">Continue: Database Fundamentals →</button>
+</section>
+
+<!-- ===== 02 DATABASE BASICS ===== -->
+<section id="db" class="fade-in">
+    <div class="sec-head"><div class="num">02</div><div><h2>Database Fundamentals</h2><div class="sub">Click a column, row, or value to learn what it means</div></div></div>
+    <div class="card">
+        <h3>🗄️ A simple relational database</h3>
+        <p class="muted">Database: <b>shop_db</b> &nbsp;|&nbsp; Table: <b>users</b></p>
+        <div class="flow" style="margin-top:4px">
+            <div class="fnode ok"><span class="ic">🗄️</span>DATABASE</div>
+            <div class="farrow">↓</div>
+            <div class="fnode"><span class="ic">📋</span>TABLE</div>
+            <div class="farrow">↓</div>
+            <div class="fnode"><span class="ic">🧱</span>COLUMNS</div>
+            <div class="farrow">↓</div>
+            <div class="fnode"><span class="ic">➖</span>ROWS</div>
+            <div class="farrow">↓</div>
+            <div class="fnode warn"><span class="ic">🔢</span>VALUES</div>
+        </div>
+        <table class="tbl" id="usersTable">
+            <thead><tr>
+                <th class="col-cell" data-type="col" data-name="id">id</th>
+                <th class="col-cell" data-type="col" data-name="username">username</th>
+                <th class="col-cell" data-type="col" data-name="email">email</th>
+                <th class="col-cell" data-type="col" data-name="role">role</th>
+            </tr></thead>
+            <tbody>
+                <tr><td class="row-cell val-cell" data-type="val" data-r="1" data-c="id">1</td><td class="row-cell val-cell" data-type="val" data-r="1" data-c="username">alice</td><td class="row-cell val-cell" data-type="val" data-r="1" data-c="email">alice@example.test</td><td class="row-cell val-cell" data-type="val" data-r="1" data-c="role">user</td></tr>
+                <tr><td class="row-cell val-cell" data-type="val" data-r="2" data-c="id">2</td><td class="row-cell val-cell" data-type="val" data-r="2" data-c="username">bob</td><td class="row-cell val-cell" data-type="val" data-r="2" data-c="email">bob@example.test</td><td class="row-cell val-cell" data-type="val" data-r="2" data-c="role">user</td></tr>
+                <tr><td class="row-cell val-cell" data-type="val" data-r="3" data-c="id">3</td><td class="row-cell val-cell" data-type="val" data-r="3" data-c="username">admin</td><td class="row-cell val-cell" data-type="val" data-r="3" data-c="email">admin@example.test</td><td class="row-cell val-cell" data-type="val" data-r="3" data-c="role">admin</td></tr>
+            </tbody>
+        </table>
+        <div class="sqlresult" id="dbExplain" style="margin-top:6px">Click <b>id</b>, <b>username</b>, a <b>row</b>, or any <b>value</b> above to see what it represents.</div>
+        <div class="trainer">
+            <div class="lbl">🎓 Trainer Tip</div>
+            Keep it visual. Don't dive into normalization or joins — students only need the column/row/value mental model before SQL.
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('sql')">Continue: What Is SQL? →</button>
+</section>
+
+<!-- ===== 03 WHAT IS SQL ===== -->
+<section id="sql" class="fade-in">
+    <div class="sec-head"><div class="num">03</div><div><h2>What Is SQL?</h2><div class="sub">The language applications use to talk to databases</div></div></div>
+    <div class="card">
+        <h3>🗣️ SQL — Structured Query Language</h3>
+        <p>SQL is a standard language used to <b>communicate with relational databases</b>. When an app needs data, it sends SQL; the database replies with results.</p>
+        <div class="flow">
+            <div class="fnode info"><span class="ic">📝</span>SELECT</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">📤</span>FROM</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">🔎</span>WHERE</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">🗄️</span>DATABASE</div>
+        </div>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"If the browser speaks HTTP and the server speaks a programming language, what language does the <i>database</i> speak?"</div>
+            <button class="btn btn-ghost" onclick="revealBox(this,'<b>SQL</b>. The web app translates a user\'s request into SQL, which the database understands and executes.')">Reveal Answer</button>
+            <div class="reveal"></div>
+        </div>
+        <div class="call info">
+            <div class="ci">ℹ</div>
+            <div class="ct">Notice the two worlds: <b>SQL instructions</b> (written by the developer) and <b>data values</b> (supplied by users). SQL Injection happens when those two get mixed up.</div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('practice')">Continue: SQL Query Practice →</button>
+</section>
+
+<!-- ===== 04 SQL PRACTICE ===== -->
+<section id="practice" class="fade-in">
+    <div class="sec-head"><div class="num">04</div><div><h2>Basic SQL Queries — Query Explorer</h2><div class="sub">Familiarize students with SQL before introducing SQLi</div></div></div>
+    <div class="card">
+        <h3>🧪 SQL Query Explorer</h3>
+        <p class="muted">Click the building blocks to construct a query, then run it against the fictional <b>users</b> table. Watch the result below.</p>
+        <div class="explainer">
+            <div class="sqlbuilder" id="sqlBuilder">
+                <span class="kw sel" data-k="select" onclick="toggleKW(this)">SELECT *</span>
+                <span class="kw" data-k="from" onclick="toggleKW(this)">FROM users</span>
+                <span class="kw" data-k="where" onclick="toggleKW(this)">WHERE username = 'alice'</span>
+            </div>
+        </div>
+        <div class="explain3" id="kwExplain"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+            <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+            <button class="btn btn-ghost" onclick="resetQuery()">Reset</button>
+        </div>
+        <div class="sqlresult" id="queryResult" style="margin-top:12px">— click Run Query —</div>
+        <div class="trainer">
+            <div class="lbl">🎓 Trainer Tip</div>
+            For each keyword, ask the three questions out loud: <b>SELECT</b> = "What data do you want?" · <b>FROM</b> = "From which table?" · <b>WHERE</b> = "Under what condition?"
+        </div>
+    </div>
+    <div class="card">
+        <h4>📚 The CRUD families (concept only)</h4>
+        <div class="flow">
+            <div class="fnode info"><span class="ic">📥</span>INSERT<br>Create</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">📤</span>SELECT<br>Read</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">✏️</span>UPDATE<br>Update</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">🗑️</span>DELETE<br>Delete</div>
+        </div>
+        <p class="small muted" style="margin-top:10px">We focus on <b>SELECT</b> because it is what most SQLi examples read through — but remember an injection point can reach any of these.</p>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('comm')">Continue: How Apps Talk to Databases →</button>
+</section>
+
+<!-- ===== 05 COMMUNICATION ===== -->
+<section id="comm" class="fade-in">
+    <div class="sec-head"><div class="num">05</div><div><h2>How a Web App Communicates With a Database</h2><div class="sub">Follow the request, step by step</div></div></div>
+    <div class="card">
+        <h3>🔄 Follow the Request — product search</h3>
+        <p class="muted">A student searches for <b>Laptop</b>. Click <b>Next Step</b> to walk through each stage live.</p>
+        <div class="steps" id="commSteps">
+            <div class="step" data-step="1"><div class="snum">1</div><div><div class="stitle">Browser</div><div class="sbody">Search box contains: <span class="k">Laptop</span></div></div></div>
+            <div class="step" data-step="2"><div class="snum">2</div><div><div class="stitle">HTTP Request</div><div class="sbody">GET /search?product=<span class="k">Laptop</span></div></div></div>
+            <div class="step" data-step="3"><div class="snum">3</div><div><div class="stitle">Web Application</div><div class="sbody">Receives: product = <span class="k">Laptop</span></div></div></div>
+            <div class="step" data-step="4"><div class="snum">4</div><div><div class="stitle">Application → Database (SQL)</div><div class="sbody">SELECT * FROM products WHERE name = '<span class="k">Laptop</span>';</div></div></div>
+            <div class="step" data-step="5"><div class="snum">5</div><div><div class="stitle">Database</div><div class="sbody">Finds matching rows</div></div></div>
+            <div class="step" data-step="6"><div class="snum">6</div><div><div class="stitle">Query Result</div><div class="sbody"><span class="k">Laptop · ₹50,000 · In Stock</span></div></div></div>
+            <div class="step" data-step="7"><div class="snum">7</div><div><div class="stitle">Web Application</div><div class="sbody">Builds HTTP response with the result</div></div></div>
+            <div class="step" data-step="8"><div class="snum">8</div><div><div class="stitle">Browser</div><div class="sbody">Displays the product to the user</div></div></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="commNext" onclick="commNext()">Next Step →</button>
+            <button class="btn btn-ghost" onclick="commReset()">Restart</button>
+        </div>
+        <div class="call ok" style="margin-top:16px">
+            <div class="ci">✓</div>
+            <div class="ct"><b>Key takeaway:</b> The <b>web application</b> — not the browser or the database — is what builds the SQL query. The user only supplies a value.</div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('trust')">Continue: The Trust Boundary →</button>
+</section>
+
+<!-- ===== 06 TRUST BOUNDARY ===== -->
+<section id="trust" class="fade-in">
+    <div class="sec-head"><div class="num">06</div><div><h2>The Trust Boundary</h2><div class="sub">Where does user input enter the flow?</div></div></div>
+    <div class="card">
+        <h3>🚧 Where did "Laptop" come from?</h3>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"The browser sent 'Laptop'. Who actually <i>creates</i> the SQL query — the browser, the web application, or the database?"</div>
+            <button class="btn btn-ghost" onclick="revealBox(this,'The <b>web application</b> creates it. The browser only sends a value; the database only executes what it is given. The app is the builder — and the gatekeeper.')">Reveal Answer</button>
+            <div class="reveal"></div>
+        </div>
+        <div class="flow">
+            <div class="fnode danger"><span class="ic">🧑</span>USER-CONTROLLED INPUT</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">📨</span>HTTP REQUEST</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">⚙️</span>WEB APPLICATION</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🗣️</span>DATABASE QUERY</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">🗄️</span>DATABASE</div>
+        </div>
+        <div class="call warn">
+            <div class="ci">⚠</div>
+            <div class="ct"><b>Now the critical question:</b> "What happens if the application assumes that everything the user sends is safe <i>data</i>?" That assumption is exactly where SQL Injection is born.</div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('sqli')">Continue: What Is SQL Injection? →</button>
+</section>
+
+<!-- ===== 07 WHAT IS SQLI ===== -->
+<section id="sqli" class="fade-in">
+    <div class="sec-head"><div class="num">07</div><div><h2>What Is SQL Injection?</h2><div class="sub">Expected vs vulnerable behavior</div></div></div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'sqli','explain')">📖 Concept</div>
+        <div class="tab" onclick="switchTab(this,'sqli','sim')">🧪 Normal vs Vulnerable</div>
+    </div>
+    <div id="sqli-explain">
+        <div class="card">
+            <h3>✅ Expected behavior</h3>
+            <div class="flow">
+                <div class="fnode info"><span class="ic">📜</span>SQL INSTRUCTION</div>
+                <div class="farrow">+</div>
+                <div class="fnode info"><span class="ic">📦</span>USER DATA</div>
+                <div class="farrow">→</div>
+                <div class="fnode ok"><span class="ic">🗄️</span>Database treats input as <b>data</b></div>
+            </div>
+            <h3 style="margin-top:18px">⚠️ Vulnerable behavior</h3>
+            <div class="flow">
+                <div class="fnode info"><span class="ic">📜</span>SQL INSTRUCTION</div>
+                <div class="farrow">+</div>
+                <div class="fnode danger"><span class="ic">⚠️</span>UNTRUSTED INPUT</div>
+                <div class="farrow">+</div>
+                <div class="fnode danger"><span class="ic">🔧</span>UNSAFE QUERY CONSTRUCTION</div>
+                <div class="farrow">→</div>
+                <div class="fnode danger"><span class="ic">💥</span>Input influences query logic</div>
+            </div>
+            <div class="call danger">
+                <div class="ci">!</div>
+                <div class="ct"><b>SQL Injection is NOT about memorizing magic payloads.</b> The real problem is: <b>untrusted input is allowed to influence the structure or meaning of a SQL query.</b></div>
+            </div>
+        </div>
+    </div>
+    <div id="sqli-sim" style="display:none">
+        <div class="card">
+            <p class="muted">Type a username. Try the normal value, then try the payload <span class="k">' OR '1'='1</span>.</p>
+            <div class="sim-controls" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                <input class="field" id="sqliUser" value="alice" style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13px">
+                <button class="btn btn-ghost" onclick="document.getElementById('sqliUser').value=&quot;' OR '1'='1&quot;;simSQLi()">Inject payload</button>
+                <button class="btn btn-primary" onclick="simSQLi()">Run Login</button>
+            </div>
+            <div class="reqres">
+                <div class="panel"><div class="ph"><span class="d b"></span> Query sent to database</div><div class="pb" id="sqliOut">— click Run Login —</div></div>
+            </div>
+            <div class="verdict" id="sqliVerdict"></div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('why2')">Continue: Why Does It Happen? →</button>
+</section>
+
+<!-- ===== 08 WHY IT HAPPENS ===== -->
+<section id="why2" class="fade-in">
+    <div class="sec-head"><div class="num">08</div><div><h2>Why Does SQL Injection Happen?</h2><div class="sub">The root cause in one sentence</div></div></div>
+    <div class="card">
+        <h3>🔍 The root cause</h3>
+        <p>The application builds a SQL string by <b>concatenating</b> developer instructions with user input, then hands the whole string to the database as one command.</p>
+        <div class="call danger">
+            <div class="ci">!</div>
+            <div class="ct"><b>Vulnerable code pattern (conceptual):</b><br><span class="k">query = "SELECT * FROM users WHERE username='" + input + "'"</span><br>The database cannot tell which part is instruction and which part is data — because they were merged into one string.</div>
+        </div>
+        <h4>How injection changes query behavior</h4>
+        <div class="reqres">
+            <div class="panel"><div class="ph"><span class="d b"></span> Intended</div><div class="pb"><span class="c-mut">SELECT * FROM users WHERE username='</span><span class="c-info">alice</span><span class="c-mut">';</span></div></div>
+            <div class="panel"><div class="ph"><span class="d r"></span> With payload ' OR '1'='1</div><div class="pb"><span class="c-mut">SELECT * FROM users WHERE username='</span><span class="c-danger">' OR '1'='1</span><span class="c-mut">';</span>\n<span class="c-danger">→ condition always TRUE → returns all rows</span></div></div>
+        </div>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"The user typed a quote. Why did that single character change the <i>meaning</i> of the query?"</div>
+            <button class="btn btn-ghost" onclick="revealBox(this,'The quote <b>closed the string early</b>, so everything after it was read as SQL <i>code</i>, not data. That is the moment input stops being data and becomes instruction.')">Reveal Answer</button>
+            <div class="reveal"></div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('types')">Continue: Types of SQL Injection →</button>
+</section>
+
+<!-- ===== 09 TYPE HIERARCHY ===== -->
+<section id="types" class="fade-in">
+    <div class="sec-head"><div class="num">09</div><div><h2>Types of SQL Injection</h2><div class="sub">A teaching-friendly classification</div></div></div>
+    <div class="card">
+        <div class="tree"><span class="c1">SQL INJECTION</span>
+│
+├── <span class="c2">IN-BAND SQLi</span>        (result via normal channel)
+│   ├── Error-Based
+│   └── UNION-Based
+│
+├── <span class="c2">BLIND / INFERENTIAL</span>  (no direct data; infer from behavior)
+│   ├── Boolean-Based
+│   └── Time-Based
+│
+└── <span class="c3">OUT-OF-BAND</span>        (result via a different channel)</div>
+        <div class="call info">
+            <div class="ci">ℹ</div>
+            <div class="ct"><b>How to read this:</b> <i>In-band, blind/inferential, and out-of-band</i> describe <b>broad ways</b> information is obtained or observed. <i>Error-based, UNION-based, Boolean-based, and time-based</i> describe commonly taught <b>techniques</b> within them.</div>
+        </div>
+        <div class="predict">
+            <div class="lbl">🔮 Predict</div>
+            <p class="muted" style="margin:0">Ask students: "If the app shows database errors, which technique becomes easy? If it shows nothing at all, what must the attacker do instead?"</p>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('inband')">Continue: In-Band SQLi →</button>
+</section>
+
+<!-- ===== 10 IN-BAND ===== -->
+<section id="inband" class="fade-in">
+    <div class="sec-head"><div class="num">10</div><div><h2>In-Band SQL Injection</h2><div class="sub">Information returns through the normal application response</div></div></div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'inband','error')">Error-Based</div>
+        <div class="tab" onclick="switchTab(this,'inband','union')">UNION-Based</div>
+    </div>
+    <div id="inband-error">
+        <div class="card">
+            <h3>⚠️ Error-Based</h3>
+            <p><b>What is it?</b> The attacker triggers a database error and reads the message to learn about the schema, version, or data.</p>
+            <p><b>Why use it?</b> A single quote can break query syntax; the error response often reveals internals.</p>
+            <p><b>What does the attacker observe?</b> Database error text returned in the page.</p>
+            <div class="reqres">
+                <div class="panel"><div class="ph"><span class="d r"></span> Attacker input: &nbsp; <span class="k">'</span></div><div class="pb"><span class="c-mut">SELECT * FROM users WHERE username='</span><span class="c-danger">'</span>\n<span class="c-danger">→ ERROR: unterminated quoted string at or near "'"</span></div></div>
+            </div>
+            <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Scenario:</b> The error leaks the DBMS type and column structure — a roadmap for deeper extraction.</div></div>
+        </div>
+    </div>
+    <div id="inband-union" style="display:none">
+        <div class="card">
+            <h3>🔗 UNION-Based</h3>
+            <p><b>What is it?</b> The attacker appends a second <span class="k">SELECT</span> using <span class="k">UNION</span> to splice extra result rows into the normal output.</p>
+            <p><b>Why use it?</b> It pulls data from <i>other</i> tables (e.g. users) into a response that normally shows products.</p>
+            <p><b>What does the attacker observe?</b> Extra rows appear in the application's normal results.</p>
+            <div class="reqres">
+                <div class="panel"><div class="ph"><span class="d b"></span> Original result</div><div class="pb"><span class="c-mut">Laptop · ₹50,000 · In Stock</span></div></div>
+                <div class="panel"><div class="ph"><span class="d r"></span> Payload: &nbsp; <span class="k">' UNION SELECT username, password FROM users --</span></div><div class="pb"><span class="c-mut">Laptop · ₹50,000</span>\n<span class="c-danger">alice · ali789</span>\n<span class="c-danger">admin · admin123</span></div></div>
+            </div>
+            <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Scenario:</b> The product list now also shows credential rows — data the page was never meant to display.</div></div>
+            <div class="ask">
+                <div class="lbl">💬 Ask Students</div>
+                <div class="q">"Why must the UNION query have the same number of columns as the original?"</div>
+                <button class="btn btn-ghost" onclick="revealBox(this,'Because <b>UNION</b> stitches result sets together vertically — mismatched column counts make the database reject the query. Attackers probe column counts first.')">Reveal Answer</button>
+                <div class="reveal"></div>
+            </div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('blind')">Continue: Blind SQLi →</button>
+</section>
+
+<!-- ===== 11 BLIND ===== -->
+<section id="blind" class="fade-in">
+    <div class="sec-head"><div class="num">11</div><div><h2>Blind / Inferential SQL Injection</h2><div class="sub">The injection works, but data isn't shown directly</div></div></div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'blind','bool')">Boolean-Based</div>
+        <div class="tab" onclick="switchTab(this,'blind','time')">Time-Based</div>
+    </div>
+    <div id="blind-bool">
+        <div class="card">
+            <h3>🔘 Boolean-Based</h3>
+            <p><b>What is it?</b> The attacker sends a condition and infers the answer from how the page behaves — not from data shown.</p>
+            <div class="flow">
+                <div class="fnode ok"><span class="ic">✅</span>TRUE<br>Page behaves one way</div>
+                <div class="farrow">→</div>
+                <div class="fnode danger"><span class="ic">❌</span>FALSE<br>Page behaves differently</div>
+            </div>
+            <div class="sim-controls" style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
+                <button class="btn btn-ghost info" onclick="blindBool(true)">Send OR '1'='1 (TRUE)</button>
+                <button class="btn btn-ghost warn" onclick="blindBool(false)">Send OR '1'='2 (FALSE)</button>
+            </div>
+            <div class="sqlresult" id="blindBoolOut">— send a payload —</div>
+            <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Scenario:</b> The page never shows data, but by asking yes/no questions ("is the first character 'a'?") the attacker extracts information one bit at a time.</div></div>
+        </div>
+    </div>
+    <div id="blind-time" style="display:none">
+        <div class="card">
+            <h3>⏱️ Time-Based</h3>
+            <p><b>What is it?</b> The attacker forces the database to wait. If the response is delayed, the injected condition was executed.</p>
+            <div class="sim-controls" style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">
+                <button class="btn btn-ghost info" onclick="blindTime(true)">Send SLEEP(3) — condition TRUE</button>
+                <button class="btn btn-ghost warn" onclick="blindTime(false)">Send SLEEP(3) — condition FALSE</button>
+            </div>
+            <div class="sqlresult" id="blindTimeOut">— send a payload —</div>
+            <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Scenario:</b> Even with no visible difference, the clock becomes the channel: a 3-second pause means "yes".</div></div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('oob')">Continue: Out-of-Band SQLi →</button>
+</section>
+
+<!-- ===== 12 OUT OF BAND ===== -->
+<section id="oob" class="fade-in">
+    <div class="sec-head"><div class="num">12</div><div><h2>Out-of-Band SQL Injection</h2><div class="sub">Result travels through a different channel</div></div></div>
+    <div class="card">
+        <h3>📡 Out-of-Band (OOB)</h3>
+        <p><b>What is it?</b> When the normal response can't carry data (e.g. blind, delayed), the database is made to send information to an external destination the attacker controls.</p>
+        <p><b>Why use it?</b> Circumvents situations where in-band or blind inference is too slow or blocked.</p>
+        <div class="flow">
+            <div class="fnode danger"><span class="ic">🧑</span>Attacker</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">⚙️</span>Application</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🗄️</span>Database</div>
+            <div class="farrow">→</div>
+            <div class="fnode info"><span class="ic">📡</span>Different Channel</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">👁️</span>External Observation</div>
+        </div>
+        <div class="call info"><div class="ci">ℹ</div><div class="ct"><b>Conceptual only:</b> This lab does not build real external communication. The point is that the response can leave through a side channel (e.g. DNS/HTTP callbacks) instead of the web response.</div></div>
+        <div class="ask">
+            <div class="lbl">💬 Ask Students</div>
+            <div class="q">"How is Out-of-Band different from Blind, in one sentence?"</div>
+            <button class="btn btn-ghost" onclick="revealBox(this,'Blind infers from the <b>same</b> app response (behavior/time); Out-of-Band exfiltrates via a <b>separate</b> channel the database reaches out to.')">Reveal Answer</button>
+            <div class="reveal"></div>
+        </div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('impact')">Continue: Real-World Impact →</button>
+</section>
+
+<!-- ===== 13 IMPACT ===== -->
+<section id="impact" class="fade-in">
+    <div class="sec-head"><div class="num">13</div><div><h2>Real-World Impact</h2><div class="sub">Impact depends on context and privileges</div></div></div>
+    <div class="card">
+        <h3>💥 SQL Injection is more than login bypass</h3>
+        <div class="flow">
+            <div class="fnode danger"><span class="ic">💉</span>SQL INJECTION</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">🗄️</span>DATABASE ACCESS</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">❓</span>What can the DB account do?</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">📊</span>POSSIBLE IMPACT</div>
+        </div>
+        <div class="table-container" style="overflow-x:auto">
+            <table class="tbl">
+                <thead><tr><th>Possible Impact</th><th>When?</th></tr></thead>
+                <tbody>
+                    <tr><td>Unauthorized access to data</td><td>Read permission present</td></tr>
+                    <tr><td>Sensitive information disclosure</td><td>Personal / financial data stored</td></tr>
+                    <tr><td>Authentication or logic bypass</td><td>Injection in login / auth query</td></tr>
+                    <tr><td>Modification of database data</td><td>UPDATE/INSERT permission present</td></tr>
+                    <tr><td>Deletion of data</td><td>DELETE permission present</td></tr>
+                    <tr><td>Wider system impact</td><td>Severe config (e.g. file read, RCE paths)</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Teach the nuance:</b> impact is not fixed. A low-privilege account may only read one table; a high-privilege one may compromise the whole server. Always tie impact to <b>what the database account is allowed to do</b>.</div></div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('sqlmap')">Continue: SQLMap Introduction →</button>
+</section>
+
+<!-- ===== 14 SQLMAP ===== -->
+<section id="sqlmap" class="fade-in">
+    <div class="sec-head"><div class="num">14</div><div><h2>SQLMap Introduction</h2><div class="sub">First understand the vulnerability, then the automation</div></div></div>
+    <div class="card">
+        <h3>🤖 What Is SQLMap?</h3>
+        <p>SQLMap is an open-source penetration-testing tool that <b>automates</b> detecting and exploiting SQL Injection in <b>authorized</b> security testing environments.</p>
+        <div class="wf">
+            <div class="wfnode acc">TARGET / REQUEST</div><div class="wfarr">→</div>
+            <div class="wfnode tool">SQLMAP sends test inputs</div><div class="wfarr">→</div>
+            <div class="wfnode tool">Observes responses</div><div class="wfarr">→</div>
+            <div class="wfnode tool">Compares behavior</div><div class="wfarr">→</div>
+            <div class="wfnode acc">Identifies SQLi + technique</div><div class="wfarr">→</div>
+            <div class="wfnode tool">Automates further testing</div>
+        </div>
+        <div class="trainer">
+            <div class="lbl">🎓 Trainer Tip</div>
+            Land the message hard: <b>"First understand the vulnerability. Then understand the automation tool."</b> Running SQLMap without understanding teaches nothing.
+        </div>
+        <h4>✅ What SQLMap can help with</h4>
+        <div class="flow">
+            <div class="fnode ok"><span class="ic">🔎</span>Detection</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🏷️</span>Technique ID</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🧬</span>DBMS Fingerprint</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">📚</span>Enumeration</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🔁</span>Automation</div>
+        </div>
+        <div class="call danger">
+            <div class="ci">!</div>
+            <div class="ct"><b>What SQLMap does NOT mean:</b> "Running SQLMap does not mean you understand SQL Injection." The learning order is: <b>Manual understanding → know why the vulnerability exists → understand application behavior → then use automation.</b></div>
+        </div>
+        <h4>❓ Why can SQLMap sometimes fail?</h4>
+        <div class="flow">
+            <div class="fnode warn"><span class="ic">🕳️</span>Injection point not obvious</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🔐</span>Auth required</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🧩</span>Complex request reproduction</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🛡️</span>Security controls interfere</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🌀</span>Unstable behavior</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🧠</span>Needs manual reasoning</div>
+        </div>
+        <div class="call ok"><div class="ci">✓</div><div class="ct">This section is an <b>educational explanation + simulated workflow</b> only. It does not run SQLMap against any real target.</div></div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('prevent')">Continue: Prevention →</button>
+</section>
+
+<!-- ===== 15 PREVENTION ===== -->
+<section id="prevent" class="fade-in">
+    <div class="sec-head"><div class="num">15</div><div><h2>SQL Injection Prevention</h2><div class="sub">Return to the root cause</div></div></div>
+    <div class="card">
+        <h3>🔒 The fix: keep code and data separate</h3>
+        <div class="flow">
+            <div class="fnode danger"><span class="ic">💉</span>SQL CODE + UNTRUSTED INPUT</div>
+            <div class="farrow">→</div>
+            <div class="fnode danger"><span class="ic">💥</span>Unsafe Query Construction</div>
+        </div>
+        <div class="farrow" style="justify-content:center;display:flex;color:var(--muted2)">vs</div>
+        <div class="flow">
+            <div class="fnode ok"><span class="ic">📜</span>SQL STRUCTURE + PARAMETER</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🛡️</span>Kept logically separate</div>
+        </div>
+        <h4>Parameterized Queries / Prepared Statements</h4>
+        <div class="reqres">
+            <div class="panel"><div class="ph"><span class="d g"></span> Query template (structure)</div><div class="pb"><span class="c-mut">SELECT * FROM users WHERE username = </span><span class="c-ok">?</span></div></div>
+            <div class="panel"><div class="ph"><span class="d y"></span> Parameter (data only)</div><div class="pb"><span class="c-warn">alice</span></div></div>
+        </div>
+        <div class="call ok"><div class="ci">✓</div><div class="ct">The database receives the <b>intended SQL structure separately from the user-controlled data</b>. Input like <span class="k">' OR '1'='1</span> is treated as a literal username to search for — never as code.</div></div>
+        <h4>Defense in depth</h4>
+        <div class="flow">
+            <div class="fnode ok"><span class="ic">🥇</span>Parameterized queries</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🧱</span>Safe ORM usage</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">✅</span>Allow-list validation</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🔻</span>Least-privilege DB account</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🚫</span>Secure error handling</div>
+        </div>
+        <div class="call warn"><div class="ci">⚠</div><div class="ct"><b>Important:</b> Input validation alone is <b>not</b> a replacement for parameterized queries. Validation reduces risk; parameterization removes the root cause.</div></div>
+    </div>
+    <button class="nextbtn" onclick="jumpTo('portswigger')">Continue: Practice in Safe Labs →</button>
+</section>
+
+<!-- ===== 16 PORTSWIGGER ===== -->
+<section id="portswigger" class="fade-in">
+    <div class="sec-head"><div class="num">16</div><div><h2>PortSwigger Web Security Academy</h2><div class="sub">Now you understand the concept — let's practice it</div></div></div>
+    <div class="card">
+        <h3>🧪 From theory to practice</h3>
+        <div class="flow">
+            <div class="fnode ok"><span class="ic">🗄️</span>Databases</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🗣️</span>SQL</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">📜</span>Normal Queries</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">💉</span>SQL Injection</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🧩</span>SQLi Types</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">✋</span>Manual Testing</div>
+            <div class="farrow">→</div>
+            <div class="fnode ok"><span class="ic">🤖</span>SQLMap</div>
+            <div class="farrow">→</div>
+            <div class="fnode warn"><span class="ic">🏆</span>Safe Labs</div>
+        </div>
+        <button class="nextbtn alt" id="psBtn" onclick="psNext()">Explore PortSwigger SQL Injection Labs →</button>
+        <p class="small muted" style="margin-top:12px">Tip: replace the <span class="k">onclick</span> of the button above with your labs URL, e.g. <span class="k">window.location='https://portswigger.net/web-security/sql-injection'</span>.</p>
+        <h4 style="margin-top:20px">✅ Before Starting Labs — checklist</h4>
+        <p class="muted small">Students should be able to explain:</p>
+        <ul class="checklist">
+            <li><span class="ck">✓</span>What is a database?</li>
+            <li><span class="ck">✓</span>What is SQL?</li>
+            <li><span class="ck">✓</span>What is a SQL query?</li>
+            <li><span class="ck">✓</span>How does a web app communicate with a database?</li>
+            <li><span class="ck">✓</span>Where does user input enter the flow?</li>
+            <li><span class="ck">✓</span>Why does unsafe query construction create SQLi?</li>
+            <li><span class="ck">✓</span>What is In-Band SQLi?</li>
+            <li><span class="ck">✓</span>What is Blind SQLi?</li>
+            <li><span class="ck">✓</span>What is Out-of-Band SQLi?</li>
+            <li><span class="ck">✓</span>What is SQLMap used for?</li>
+        </ul>
+        <div class="call ok"><div class="ci">🎓</div><div class="ct"><b>You've finished the journey.</b> A beginner should now understand <b>why</b> SQL Injection happens and <b>how the techniques differ</b> — not just which payloads to type.</div></div>
+    </div>
+    <footer>
+        SQL Injection — From Database Fundamentals to SQLi Techniques · Educational use only · All simulations use fictional data and run entirely in your browser.<br>
+        Companion to the OWASP Top 10:2025 Injection lesson.
+    </footer>
+</section>
+
+</div>
+</div>
+</div>
+
+<script>
+/* ===================== Navigation ===================== */
+const sections=['intro','why','db','sql','practice','comm','trust','sqli','why2','types','inband','blind','oob','impact','sqlmap','prevent','portswigger'];
+const crumbNames={intro:'From Injection to SQLi',why:'Why Databases?',db:'Database Basics',sql:'What Is SQL?',practice:'SQL Query Practice',comm:'App ↔ Database',trust:'Trust Boundary',sqli:'What Is SQLi?',why2:'Why It Happens',types:'Type Hierarchy',inband:'In-Band',blind:'Blind',oob:'Out-of-Band',impact:'Impact',sqlmap:'SQLMap Intro',prevent:'Prevention',portswigger:'PortSwigger Labs'};
+const total=sections.length;
+function jumpTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
+function updateActive(){
+    let cur='intro';
+    for(const s of sections){const el=document.getElementById(s);if(el&&el.getBoundingClientRect().top<140)cur=s;}
+    document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.target===cur));
+    document.getElementById('crumb').textContent=crumbNames[cur]||'';
+    const idx=sections.indexOf(cur);
+    document.getElementById('progressLabel').textContent=(idx+1)+' / '+total;
+    document.getElementById('progressFill').style.width=((idx+1)/total*100)+'%';
+    const sel=document.getElementById('mobileSelect');if(sel)sel.value=cur;
+}
+window.addEventListener('scroll',updateActive,{passive:true});
+(function(){const sel=document.getElementById('mobileSelect');sections.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=crumbNames[s];sel.appendChild(o);});sel.addEventListener('change',e=>jumpTo(e.target.value));})();
+
+/* ===================== Helpers ===================== */
+function revealBox(btn,html){const r=btn.parentElement.querySelector('.reveal');r.innerHTML=html;r.classList.toggle('show');btn.textContent=r.classList.contains('show')?'Hide Answer':'Reveal Answer';}
+function switchTab(tab,cat,which){
+    const tabs=tab.parentElement.querySelectorAll('.tab');tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');
+    // hide all sub-panels within this section
+    const sec=tab.closest('section');
+    sec.querySelectorAll(':scope > div[id^="'+cat+'"]').forEach(d=>d.style.display='none');
+    const target=document.getElementById(cat+'-'+which);
+    if(target)target.style.display='block';
+}
+function vrow(k,val){return '<div class="vrow"><div class="vk">'+k+'</div><div class="vv">'+val+'</div></div>';}
+
+/* ===================== 02 Database table interactivity ===================== */
+(function(){
+    const table=document.getElementById('usersTable');
+    const out=document.getElementById('dbExplain');
+    if(!table)return;
+    const msgs={
+        col:"<b>COLUMN</b> — a <b>type of data</b> stored for every record (e.g. username). All rows share the same columns.",
+        row:"<b>ROW</b> — one complete <b>record</b> (here, one user: id, username, email, role together).",
+        val:"<b>VALUE</b> — a single piece of <b>data</b> sitting at the intersection of one column and one row."
+    };
+    table.querySelectorAll('.col-cell').forEach(c=>c.addEventListener('click',()=>{
+        table.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+        const col=c.dataset.name;
+        table.querySelectorAll('[data-c="'+col+'"]').forEach(x=>x.classList.add('hl'));
+        out.innerHTML=msgs.col+' <span class="ok">Highlighted: column "'+col+'"</span>';
+    }));
+    table.querySelectorAll('.row-cell').forEach(r=>r.addEventListener('click',()=>{
+        table.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+        const rid=r.dataset.r;
+        table.querySelectorAll('[data-r="'+rid+'"]').forEach(x=>x.classList.add('hl'));
+        out.innerHTML=msgs.row+' <span class="ok">Highlighted: row '+rid+' (one user record)</span>';
+    }));
+    table.querySelectorAll('.val-cell').forEach(v=>v.addEventListener('click',()=>{
+        table.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+        v.classList.add('hl');
+        out.innerHTML=msgs.val+' <span class="ok">Value: "'+v.textContent+'" ('+v.dataset.c+' of row '+v.dataset.r+')</span>';
+    }));
+})();
+
+/* ===================== 04 SQL Query Explorer ===================== */
+const usersData=[
+    {id:1,username:'alice',email:'alice@example.test',role:'user'},
+    {id:2,username:'bob',email:'bob@example.test',role:'user'},
+    {id:3,username:'admin',email:'admin@example.test',role:'admin'}
+];
+const kwInfo={
+    select:{t:'SELECT',d:'What data do you want? (here: all columns via *)'},
+    from:{t:'FROM',d:'From which table? (here: users)'},
+    where:{t:'WHERE',d:'Under what condition? (here: username = a specific value)'}
+};
+function toggleKW(el){
+    el.classList.toggle('active');
+    renderKWExplain();
+}
+function renderKWExplain(){
+    const box=document.getElementById('kwExplain');if(!box)return;
+    const active=document.querySelectorAll('#sqlBuilder .kw.active');
+    if(active.length===0){box.innerHTML='<div class="e"><div class="et">Tip</div><p>Click a building block above to include it, then Run.</p></div>';return;}
+    let h='';
+    active.forEach(k=>{const info=kwInfo[k.dataset.k];h+='<div class="e"><div class="et">'+info.t+'</div><p>'+info.d+'</p></div>';});
+    box.innerHTML=h;
+}
+function resetQuery(){
+    document.querySelectorAll('#sqlBuilder .kw').forEach(k=>{
+        if(k.dataset.k==='select')k.classList.add('active');else k.classList.remove('active');
+    });
+    renderKWExplain();
+    document.getElementById('queryResult').textContent='— click Run Query —';
+}
+function runQuery(){
+    const active=[...document.querySelectorAll('#sqlBuilder .kw.active')].map(k=>k.dataset.k);
+    const res=document.getElementById('queryResult');
+    if(active.length===0){res.innerHTML='<span class="c-danger">No clauses selected — build a query first.</span>';return;}
+    if(!active.includes('select')||!active.includes('from')){res.innerHTML='<span class="c-warn">A basic query needs at least SELECT and FROM.</span>';return;}
+    let rows=usersData;
+    if(active.includes('where')){
+        rows=usersData.filter(u=>u.username==='alice');
+    }
+    if(rows.length===0){res.innerHTML='<span class="c-mut">0 rows returned.</span>';return;}
+    let html='<span class="ok">'+rows.length+' row(s) returned:</span>\n';
+    rows.forEach(r=>{html+='<span class="row">id='+r.id+' | username='+r.username+' | email='+r.email+' | role='+r.role+'</span>\n';});
+    res.innerHTML=html;
+}
+resetQuery();
+
+/* ===================== 05 Follow the request ===================== */
+let commStep=0;
+function commShow(n){
+    document.querySelectorAll('#commSteps .step').forEach(s=>{
+        const sn=parseInt(s.dataset.step);
+        s.classList.toggle('active',sn<=n);
+    });
+}
+function commNext(){
+    if(commStep<8){commStep++;commShow(commStep);}
+    const btn=document.getElementById('commNext');
+    btn.textContent=commStep<8?'Next Step →':'Finished ✓';
+}
+function commReset(){commStep=0;commShow(0);document.getElementById('commNext').textContent='Next Step →';}
+commShow(0);
+
+/* ===================== 07 SQLi normal vs vulnerable ===================== */
+function simSQLi(){
+    const user=document.getElementById('sqliUser').value.trim();
+    const out=document.getElementById('sqliOut');
+    const v=document.getElementById('sqliVerdict');
+    const isInj = user.startsWith("'")||user.includes(" OR ")||user.includes("'1'='1")||user.includes("' OR");
+    if(!isInj){
+        out.innerHTML="<span class=\"c-mut\">SELECT * FROM users WHERE username='</span><span class=\"c-info\">"+user+"</span><span class=\"c-mut\">';</span>\n<span class=\"c-ok\">→ returns user '"+user+"' (normal)</span>";
+        v.className='verdict normal show';
+        v.innerHTML='<span class="vh">✅ Normal Mode</span>'+
+            vrow('What user controlled','The username value only')+
+            vrow('Where input went','Inside the string as data')+
+            vrow('How query built','Instruction + data, kept separate by quotes')+
+            vrow('What changed','Nothing unexpected')+
+            vrow('Why DB behaved normally','Input stayed data, not code')+
+            vrow('Vulnerability','None here (assuming safe code)');
+    }else{
+        out.innerHTML="<span class=\"c-mut\">SELECT * FROM users WHERE username='</span><span class=\"c-danger\">"+user+"</span><span class=\"c-mut\">';</span>\n<span class=\"c-danger\">→ injected condition: OR '1'='1' → always TRUE → returns ALL rows → auth bypass</span>";
+        v.className='verdict vuln show';
+        v.innerHTML='<span class="vh">⚠ Vulnerable Mode</span>'+
+            vrow('What user controlled','A quote + SQL logic: '+user)+
+            vrow('Where input went','Became part of the command text')+
+            vrow('How query built','String concatenation merged code + input')+
+            vrow('What changed','Condition now always TRUE')+
+            vrow('Why DB behaved differently','Input was read as SQL code')+
+            vrow('Vulnerability','Unsafe query construction (no parameterization)');
+    }
+}
+
+/* ===================== 11 Blind boolean / time ===================== */
+function blindBool(isTrue){
+    const out=document.getElementById('blindBoolOut');
+    if(isTrue){
+        out.innerHTML='<span class="c-mut">payload:</span> <span class="c-info">\' OR \'1\'=\'1</span>\n<span class="c-ok">→ condition TRUE → page loads normally ("Welcome, products found")</span>';
+    }else{
+        out.innerHTML='<span class="c-mut">payload:</span> <span class="c-warn">\' OR \'1\'=\'2</span>\n<span class="c-danger">→ condition FALSE → page shows "No results"</span>';
+    }
+    out.innerHTML+='\n<span class="c-mut">→ attacker infers SQLi exists because behavior differs.</span>';
+}
+function blindTime(isTrue){
+    const out=document.getElementById('blindTimeOut');
+    if(isTrue){
+        out.innerHTML='<span class="c-mut">payload:</span> <span class="c-info">\' OR SLEEP(3)--</span>\n<span class="c-warn">→ response delayed ~3s → condition was executed</span>';
+    }else{
+        out.innerHTML='<span class="c-mut">payload:</span> <span class="c-warn">\' OR SLEEP(3)--</span> (condition FALSE)\n<span class="c-ok">→ response immediate → condition not met</span>';
+    }
+    out.innerHTML+='\n<span class="c-mut">→ the delay itself becomes the information channel.</span>';
+}
+
+/* ===================== 16 PortSwigger button ===================== */
+function psNext(){
+    // Placeholder: connect to your labs URL.
+    alert('Connect this button to the PortSwigger SQL Injection labs.\n\nExample:\nwindow.location = "https://portswigger.net/web-security/sql-injection";');
+    // window.location='https://portswigger.net/web-security/sql-injection';
+}
+
+/* init */
+updateActive();
+</script>
+</body>
+</html>
